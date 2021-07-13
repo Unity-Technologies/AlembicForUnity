@@ -1,9 +1,11 @@
 {
     "name": "Unity.Formats.Alembic.Editor",
+    "rootNamespace": "",
     "references": [
         "Unity.Formats.Alembic.Runtime",
         "Unity.Timeline",
-        "Unity.Recorder.Editor"
+        "Unity.Recorder.Editor",
+        "Unity.Timeline.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -19,6 +21,11 @@
             "name": "com.unity.recorder",
             "expression": "2.2.0-preview.1",
             "define": "RECORDER_AVAILABLE"
+        },
+        {
+            "name": "com.unity.timeline",
+            "expression": "1.6.0-pre.5",
+            "define": "TIMELINE_1_6_0"
         }
     ],
     "noEngineReferences": false
