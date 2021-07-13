@@ -393,6 +393,17 @@ namespace UnityEditor.Formats.Alembic.Exporter.UnitTests
             Assert.AreNotEqual(v0.Length, mesh.vertices.Length);
         }
 
+        [UnityTest]
+        public IEnumerator EmptyStreamPlayer_DoesNotAssert()
+        {
+            var go = new GameObject();
+            go.AddComponent<AlembicStreamPlayer>();
+
+            yield return null;
+
+            Assert.IsTrue(true); // should not have Thrown exceptions
+        }
+
         static AlembicStreamPlayer LoadAndInstantiate(string guid)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);

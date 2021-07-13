@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 ### Fixed
+- Fixed a bug that caused an exception to be thrown when manually adding an AlembicStreamPlayer Component.
 
 ## [2.2.0] - 2021-06-10
 ### Added

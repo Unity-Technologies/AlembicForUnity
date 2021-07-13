@@ -350,7 +350,7 @@ namespace UnityEngine.Formats.Alembic.Importer
             if (!updateStarted && lastUpdateTime != currentTime)
                 Update();
 
-            if (!updateStarted)
+            if (!updateStarted && abcStream != null)
             {
                 // If the model did not move this frame, we need to clear the motion vectors to avoid post processing artefacts.
                 abcStream.ClearMotionVectors();
@@ -358,7 +358,10 @@ namespace UnityEngine.Formats.Alembic.Importer
             }
 
             updateStarted = false;
-            abcStream.AbcUpdateEnd();
+            if (abcStream != null)
+            {
+                abcStream.AbcUpdateEnd();
+            }
         }
 
         void OnEnable()
