@@ -35,6 +35,12 @@ namespace UnityEngine.Formats.Alembic.Importer
         public AlembicCurvesRenderer() {}
     }
 
+    public class AlembicCustomData : UnityEngine.MonoBehaviour
+    {
+        public System.Collections.Generic.List<string> FacesetNames { get; }
+        public AlembicCustomData() {}
+    }
+
     [UnityEngine.ExecuteInEditMode] public class AlembicPointsCloud : UnityEngine.MonoBehaviour
     {
         public UnityEngine.Vector3 BoundsCenter { get; }

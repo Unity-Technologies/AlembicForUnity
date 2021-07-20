@@ -200,7 +200,8 @@ struct aiPolyMeshData
 
 struct aiSubmeshData
 {
-    int *indices = nullptr;
+    int* indices = nullptr;
+    void* faceset_names = nullptr; // 2-bytes character
 };
 
 struct aiCurvesSummary

@@ -1,6 +1,20 @@
 #pragma once
 #include "aiMeshOps.h"
 
+namespace
+{
+    void copyCharsWithStride(void* target, const std::string& source, size_t maxLength)
+    {
+        const auto span = std::min(maxLength, source.size());
+        for (int i = 0; i < span; ++i)
+        {
+            *(static_cast<char*>(target) + 2 * i) = source[i];
+            *(static_cast<char*>(target) + 2 * i + 1) = '\0';
+        }
+    }
+
+
+}
 using abcFaceSetSchemas = std::vector<AbcGeom::IFaceSetSchema>;
 using abcFaceSetSamples = std::vector<AbcGeom::IFaceSetSchema::Sample>;
 
@@ -43,6 +57,7 @@ public:
     Abc::Int32ArraySamplePtr m_counts_sp;
     abcFaceSetSamples m_faceset_sps;
     RawVector<int> m_material_ids;
+    std::vector<std::string> m_faceset_names;
 
     MeshRefiner m_refiner;
     RawVector<int> m_remap_points;
@@ -445,9 +460,11 @@ void aiMeshSchema<T, U>::readSampleBody(U& sample, uint64_t idx)
     if (!m_facesets.empty() && topology_changed)
     {
         topology.m_faceset_sps.resize(m_facesets.size());
+        topology.m_faceset_names.resize(m_facesets.size());
         for (size_t fi = 0; fi < m_facesets.size(); ++fi)
         {
             m_facesets[fi].get(topology.m_faceset_sps[fi], ss);
+            topology.m_faceset_names[fi] = m_facesets[fi].getObject().getName();
         }
     }
 
@@ -969,7 +986,7 @@ void aiMeshSchema<T, U>::onTopologyChange(U& sample)
                 }
             }
         }
-        refiner.genSubmeshes(topology.m_material_ids);
+        refiner.genSubmeshes(topology.m_material_ids, topology.m_faceset_names);
     }
     else
     {
@@ -1173,6 +1190,7 @@ void aiMeshSample<T>::fillSubmeshIndices(int submesh_index, aiSubmeshData &data)
     auto& refiner = m_topology->m_refiner;
     auto& submesh = refiner.submeshes[submesh_index];
     refiner.new_indices_submeshes.copy_to(data.indices, submesh.index_count, submesh.index_offset);
+    copyCharsWithStride(data.faceset_names, submesh.facesetName, 255); // c# strings are 2 bytes. This function sets the low byte to the char and the high byte to \0
 }
 
 template<typename T>

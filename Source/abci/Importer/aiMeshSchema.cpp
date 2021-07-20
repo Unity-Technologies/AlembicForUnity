@@ -17,6 +17,7 @@ void aiMeshTopology::clear()
     m_counts_sp.reset();
     m_faceset_sps.clear();
     m_material_ids.clear();
+    m_faceset_names.clear();
     m_refiner.clear();
     m_remap_points.clear();
     m_remap_normals.clear();

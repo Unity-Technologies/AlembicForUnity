@@ -88,6 +88,7 @@ struct MeshRefiner
         int index_count = 0; // triangulated
         int index_offset = 0;
         int* dst_indices = nullptr;
+        std::string facesetName;
     };
 
     struct Split
@@ -126,7 +127,7 @@ struct MeshRefiner
     RawVector<int> new_indices_submeshes;
     RawVector<float3> new_points;
     RawVector<Split> splits;
-    RawVector<Submesh> submeshes;
+    std::vector<Submesh> submeshes;
     MeshConnectionInfo connection;
 
     // attributes
@@ -151,7 +152,7 @@ struct MeshRefiner
 
     void refine();
     void retopology(bool swap_faces);
-    void genSubmeshes(IArray<int> material_ids);
+    void genSubmeshes(IArray<int> material_ids, std::vector<std::string> &faceset_names);
     void genSubmeshes();
     void clear();
 

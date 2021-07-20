@@ -347,6 +347,20 @@ namespace UnityEditor.Formats.Alembic.Exporter.UnitTests
         }
 
         [Test]
+        public void FacesetNames_AreReadCorrectly() // Broken
+        {
+            var path = AssetDatabase.GUIDToAssetPath("f30dca527f4e947248046d6d12750c2d"); // GUID of cubes_coloured.abc
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+
+            var facesetNames = new[] { "phong2SG", "phong1SG" };
+            CollectionAssert.AreEqual(facesetNames, asset.GetComponentInChildren<AlembicCustomData>().FacesetNames);
+
+            var go = PrefabUtility.InstantiatePrefab(asset) as GameObject;
+            go.GetComponent<AlembicStreamPlayer>().UpdateImmediately(0);
+            CollectionAssert.AreEqual(facesetNames, go.GetComponentInChildren<AlembicCustomData>().FacesetNames);
+        }
+
+        [Test]
         public void SubDAndPolyMeshes_ReadTheSameWay()
         {
             Vector3[] vertexPoly, vertexSubd;

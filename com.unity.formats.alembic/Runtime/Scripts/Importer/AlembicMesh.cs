@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -15,6 +16,7 @@ namespace UnityEngine.Formats.Alembic.Importer
         internal class Submesh : IDisposable
         {
             public PinnedList<int> indexes = new PinnedList<int>();
+            public readonly char[] facesetName = new char[255];
             public bool update = true;
 
             public void Dispose()
@@ -269,6 +271,10 @@ namespace UnityEngine.Formats.Alembic.Importer
                     m_submeshes[smi].update = true;
                     submesh.indexes.ResizeDiscard(m_submeshSummaries[smi].indexCount);
                     submeshData.indexes = submesh.indexes;
+                    fixed(char* s = submesh.facesetName)
+                    {
+                        submeshData.facesetNames = s;
+                    }
                     m_submeshData[smi] = submeshData;
                 }
             }
@@ -325,7 +331,7 @@ namespace UnityEngine.Formats.Alembic.Importer
             for (var i = 0; i < m_splits.Count; ++i)
             {
                 var split = m_splits[i];
-                if (split.active &&  split.velocities.Length > 0)
+                if (split.active && split.velocities.Length > 0)
                 {
                     var job = new MultiplyByConstant
                     {
@@ -446,6 +452,33 @@ namespace UnityEngine.Formats.Alembic.Importer
                         split.mesh.SetIndices(submesh.indexes.GetArray(), MeshTopology.Quads, sum.submeshIndex, false);
                 }
             }
+
+            if (topologyChanged)
+            {
+                // There is no 1:1 mapping between ABC meshes and gameobjects. If mesh becomes too large, the same mesh is spread over multiple GO, with multiple submeshes.
+                var facesetName = new Dictionary<int, List<string>>(); // split index, faceset names
+                for (var smi = 0; smi < m_sampleSummary.submeshCount; ++smi)
+                {
+                    var sum = m_submeshSummaries[smi];
+                    var submesh = m_submeshes[smi];
+                    if (!facesetName.TryGetValue(sum.splitIndex, out var sets))
+                    {
+                        sets = new List<string>();
+                    }
+
+                    var s = new string(submesh.facesetName);
+                    sets.Add(s);
+                    facesetName[sum.splitIndex] = sets;
+                }
+
+                for (var smi = 0; smi < m_sampleSummary.submeshCount; ++smi)
+                {
+                    var sum = m_submeshSummaries[smi];
+                    var split = m_splits[sum.splitIndex];
+                    var customData = split.host.GetOrAddComponent<AlembicCustomData>();
+                    customData.SetFacesetNames(facesetName[sum.splitIndex]);
+                }
+            }
         }
 
         internal void ClearMotionVectors()
@@ -473,15 +506,10 @@ namespace UnityEngine.Formats.Alembic.Importer
                 mesh.indexFormat = IndexFormat.UInt32;
                 mesh.MarkDynamic();
 
-                if (meshFilter == null)
-                    meshFilter = go.AddComponent<MeshFilter>();
+                meshFilter = go.GetOrAddComponent<MeshFilter>();
                 meshFilter.sharedMesh = mesh;
 
-                var renderer = go.GetComponent<MeshRenderer>();
-                if (renderer == null)
-                {
-                    renderer = go.AddComponent<MeshRenderer>();
-                }
+                var renderer = go.GetOrAddComponent<MeshRenderer>();
 
                 var mat = renderer.sharedMaterial;
                 if (mat == null)

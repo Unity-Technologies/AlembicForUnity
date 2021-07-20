@@ -212,9 +212,11 @@ namespace UnityEngine.Formats.Alembic.Sdk
         public Vector3 extents;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     struct aiSubmeshData
     {
         public IntPtr indexes;
+        public unsafe char* facesetNames;
     }
 
     [StructLayout(LayoutKind.Sequential)]

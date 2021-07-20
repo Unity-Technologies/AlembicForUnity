@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Formats.Alembic.Importer;
 using UnityEngine.Formats.Alembic.Sdk;
@@ -73,7 +75,7 @@ namespace UnityEditor.Formats.Alembic.Importer
         }
     }
 
-    [ScriptedImporter(8, "abc")]
+    [ScriptedImporter(9, "abc")]
     internal class AlembicImporter : ScriptedImporter
     {
         [SerializeField]
@@ -144,6 +146,31 @@ namespace UnityEditor.Formats.Alembic.Importer
 
         const string renderPipepineDependency = "AlembicRenderPipelineDependency";
 
+        internal struct MaterialEntry
+        {
+            public AlembicCustomData component;
+            public string path;
+            public int index;
+            public Material material;
+
+            public SourceAssetIdentifier ToSourceAssetIdentifier()
+            {
+                return new SourceAssetIdentifier(typeof(Material), path + $":{index}");
+            }
+
+            public static MaterialEntry FromSourceAssetIdentifier(SourceAssetIdentifier identifier, GameObject rootGO)
+            {
+                var toks = identifier.name.Split(':');
+                var go = AlembicImporter.GetGameObjectFromPath(rootGO, toks[0]);
+                return new MaterialEntry
+                {
+                    component = go.GetComponent<AlembicCustomData>(),
+                    path = toks[0],
+                    index = int.Parse(toks[1])
+                };
+            }
+        }
+
         public override void OnImportAsset(AssetImportContext ctx)
         {
             if (ctx == null)
@@ -209,10 +236,107 @@ namespace UnityEditor.Formats.Alembic.Importer
                     {
                         Debug.LogError(path + ": Unsupported HDF5 file format detected. Please convert to Ogawa.");
                     }
+
+                    ApplyMaterialAssignments(go, subassets);
                 }
             }
 
             firstImport = false;
+        }
+
+        public override bool SupportsRemappedAssetType(Type type)
+        {
+            return type == typeof(Material);
+        }
+
+        void ApplyMaterialAssignments(GameObject go, Subassets subs)
+        {
+            var remap = GetExternalObjectMap();
+
+            foreach (var r in remap)
+            {
+                if (r.Value == null) // Null means default material
+                {
+                    continue;
+                }
+
+                var pathFaceId = r.Key.name.Split(':');
+                var path = pathFaceId[0];
+                var materialId = Int32.Parse(pathFaceId[1]);
+
+                var meshGO = GetGameObjectFromPath(go, path);
+                var renderer = meshGO.GetComponent<MeshRenderer>();
+                var mats = renderer.sharedMaterials;
+                mats[materialId] = r.Value as Material;
+                renderer.sharedMaterials = mats;
+            }
+        }
+
+        internal static List<MaterialEntry> GenMaterialSlots(AlembicImporter importer, GameObject go)
+        {
+            var ret = new List<MaterialEntry>();
+            var remap = importer.GetExternalObjectMap();
+            foreach (var customData in go.GetComponentsInChildren<AlembicCustomData>())
+            {
+                var path = GetGameObjectPath(customData.gameObject);
+                for (var i = 0; i < customData.FacesetNames.Count; ++i)
+                {
+                    var entry = new MaterialEntry {component = customData, index = i, path = path};
+                    if (remap.TryGetValue(entry.ToSourceAssetIdentifier(), out var material))
+                    {
+                        entry.material = (Material)material;
+                    }
+
+                    ret.Add(entry);
+                }
+            }
+
+            return ret;
+        }
+
+        static string GetGameObjectPath(GameObject go)
+        {
+            var reversePath = new List<string>();
+            var parent = go.transform;
+            while (parent != null)
+            {
+                reversePath.Add(parent.name);
+                parent = parent.parent;
+            }
+
+            var sb = new StringBuilder();
+            for (var i = reversePath.Count - 2; i >= 0; --i) // We don't want the root
+            {
+                sb.Append(reversePath[i]);
+                sb.Append('/');
+            }
+            return sb.ToString().TrimEnd('/');
+        }
+
+        internal static GameObject GetGameObjectFromPath(GameObject root, string path)
+        {
+            var go = root;
+            foreach (var name in path.Split('/'))
+            {
+                var found = false;
+                for (var i = 0; i < go.transform.childCount; ++i)
+                {
+                    var ch = go.transform.GetChild(i);
+                    if (ch.name == name)
+                    {
+                        go = ch.gameObject;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    throw new Exception($"Cannot find path:{path} from GameObject: {root.name}");
+                }
+            }
+
+            return go;
         }
 
         [InitializeOnLoadMethod]

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.0-pre.1] - 2021-07-11
 ### Added
 - Added support for importing the cage mesh of SubD Alembic nodes.
+- Added support for reading faceset names and Importer material assignment UI tools.
 
 ### Changed
 ### Fixed
