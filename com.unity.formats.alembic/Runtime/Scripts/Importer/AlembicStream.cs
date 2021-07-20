@@ -320,37 +320,36 @@ namespace UnityEngine.Formats.Alembic.Importer
             if (!schema) schema = obj.AsPoints();
             if (!schema) schema = obj.AsCurves();
 
-            if (schema)
+            // Get child. create if needed and allowed.
+            string childName = obj.name;
+            // Find targetted child GameObj
+            GameObject childGO = null;
+
+            var childTransf = treeNode.gameObject == null ? null : treeNode.gameObject.transform.Find(childName);
+            if (childTransf == null)
             {
-                // Get child. create if needed and allowed.
-                string childName = obj.name;
-
-                // Find targetted child GameObj
-                GameObject childGO = null;
-
-                var childTransf = treeNode.gameObject == null ? null : treeNode.gameObject.transform.Find(childName);
-                if (childTransf == null)
+                if (!ic.createMissingNodes)
                 {
-                    if (!ic.createMissingNodes)
-                    {
-                        obj.SetEnabled(false);
-                        return;
-                    }
-                    else
-                    {
-                        obj.SetEnabled(true);
-                    }
-
-                    childGO = RuntimeUtils.CreateGameObjectWithUndo("Create AlembicObject");
-                    childGO.name = childName;
-                    childGO.GetComponent<Transform>().SetParent(treeNode.gameObject.transform, false);
+                    obj.SetEnabled(false);
+                    return;
                 }
                 else
-                    childGO = childTransf.gameObject;
+                {
+                    obj.SetEnabled(true);
+                }
 
-                childTreeNode = new AlembicTreeNode() { stream = this, gameObject = childGO };
-                treeNode.Children.Add(childTreeNode);
+                childGO = RuntimeUtils.CreateGameObjectWithUndo("Create AlembicObject");
+                childGO.name = childName;
+                childGO.GetComponent<Transform>().SetParent(treeNode.gameObject.transform, false);
+            }
+            else
+                childGO = childTransf.gameObject;
 
+            childTreeNode = new AlembicTreeNode() { stream = this, gameObject = childGO };
+            treeNode.Children.Add(childTreeNode);
+
+            if (schema)
+            {
                 // Update
                 AlembicElement elem = null;
 
@@ -383,6 +382,10 @@ namespace UnityEngine.Formats.Alembic.Importer
             else
             {
                 obj.SetEnabled(false);
+                if (ic.createMissingNodes)
+                {
+                    Debug.LogWarning($"{childName} has an unsupported schema.");
+                }
             }
 
             ic.alembicTreeNode = childTreeNode;

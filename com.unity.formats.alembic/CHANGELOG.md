@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for importing the cage mesh of SubD Alembic nodes.
 
 ### Changed
+- Unsupported schema nodes are imported as NOOP GameObjects.
+
 ### Fixed
 - Fixed a bug that caused Unity Cloth Alembic export to ignore the world scale.
 

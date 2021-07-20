@@ -393,6 +393,19 @@ namespace UnityEditor.Formats.Alembic.Exporter.UnitTests
             Assert.AreNotEqual(v0.Length, mesh.vertices.Length);
         }
 
+        [Test]
+        public void UnsupportedSchemas_LoadAsNOOPGameObjects()
+        {
+            var player = LoadAndInstantiate("e9c45168caedd48a6a16b176410b89f8");
+            var cams = player.GetComponentsInChildren<Camera>();
+            var points = player.GetComponentsInChildren<AlembicPointsCloud>();
+
+            Assert.AreEqual(32, cams.Length);
+            Assert.AreEqual(1, points.Length);
+            Assert.AreEqual(12719, points.First().Positions.Count);
+            Assert.IsTrue(cams.Union<Component>(points).All(x => x.transform.parent != player.transform)); // children down the hierarchy
+        }
+
         static AlembicStreamPlayer LoadAndInstantiate(string guid)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
