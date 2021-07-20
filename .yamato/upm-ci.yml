@@ -265,6 +265,8 @@ format_check_osx:
     - git clone git@github.cds.internal.unity3d.com:unity/utr.git utr
     - unity-downloader-cli -u 2019.4 -c Editor
     - utr/utr --suite=editor --editor-location=.Editor --testproject=TestProjects/APITests --artifacts_path=artifacts --reruncount=0
+  dependencies:
+    - .yamato/upm-ci.yml#pack       
   artifacts:
     logs.zip:
       paths:
@@ -280,6 +282,8 @@ format_check_win:
     - git clone git@github.cds.internal.unity3d.com:unity/utr.git utr
     - unity-downloader-cli -u 2019.4 -c Editor
     - utr/utr.bat --suite=editor --editor-location=.Editor --testproject=TestProjects/APITests --artifacts_path=artifacts --reruncount=0
+  dependencies:
+    - .yamato/upm-ci.yml#pack         
   artifacts:
     logs.zip:
       paths:
@@ -336,7 +340,7 @@ nightly_test_trigger:
   name: Nightly tests Trigger
   triggers:
     recurring:
-      - branch: trunk
+      - branch: main
         frequency: daily
         rerun: always    
   dependencies:
